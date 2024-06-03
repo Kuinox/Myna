@@ -1,5 +1,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Target Name="MyCustomPostBuildTarget" AfterTargets="AfterBuild;ResolveAssemblyReferences">
-     <Message Text="ReferenceCopyLocalPaths: %(ReferenceCopyLocalPaths.FullPath)" Importance="high" />
+	  <!-- Summon Mocker.Weaver.dll -->
+	  <Exec Command="dotnet Mocker.Weaver.dll %(ReferenceCopyLocalPaths.FullPath)" />
   </Target>
 </Project>
