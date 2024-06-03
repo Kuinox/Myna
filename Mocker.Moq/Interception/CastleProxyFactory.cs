@@ -15,7 +15,7 @@ using System.Text;
 #endif
 
 using Castle.DynamicProxy;
-
+using Mocker.API;
 using Moq.Internals;
 using Moq.Properties;
 
@@ -107,7 +107,15 @@ namespace Moq
 
             try
             {
-                return generator.CreateClassProxy(mockType, additionalInterfaces, this.generationOptions, arguments, new Interceptor(interceptor));
+                var theInterceptor = new Interceptor(interceptor);
+                var proxy = new MockProxy((method, args) =>
+                {
+                    var mockerInvocation = new MockerInvocation(method, args);
+                    theInterceptor.Intercept(mockerInvocation);
+                    return mockerInvocation.ReturnValue;
+                });
+                var obj = Activator.CreateInstance(mockType, proxy);
+                return obj;
             }
             catch (TypeLoadException e)
             {
@@ -116,6 +124,55 @@ namespace Moq
             catch (MissingMethodException e)
             {
                 throw new ArgumentException(Resources.ConstructorNotFound, e);
+            }
+        }
+
+        class MockerInvocation(Delegate method, object[] args) : Castle.DynamicProxy.IInvocation
+        {
+            public object[] Arguments => args;
+
+            public Type[] GenericArguments => throw new NotImplementedException();
+
+            public object InvocationTarget => method.Target;
+
+            public MethodInfo Method => method.Method;
+
+            public MethodInfo MethodInvocationTarget => throw new NotImplementedException();
+
+            public object Proxy => typeof(MockProxy);
+
+            public object ReturnValue { get; set; }
+
+            public Type TargetType => throw new NotImplementedException();
+
+            public IInvocationProceedInfo CaptureProceedInfo()
+            {
+                throw new NotImplementedException();
+            }
+
+            public object GetArgumentValue(int index)
+            {
+                throw new NotImplementedException();
+            }
+
+            public MethodInfo GetConcreteMethod()
+            {
+                throw new NotImplementedException();
+            }
+
+            public MethodInfo GetConcreteMethodInvocationTarget()
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Proceed()
+            {
+                throw new NotImplementedException();
+            }
+
+            public void SetArgumentValue(int index, object value)
+            {
+                throw new NotImplementedException();
             }
         }
 

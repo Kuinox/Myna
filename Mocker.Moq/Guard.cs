@@ -80,47 +80,6 @@ namespace Moq
                 paramName);
         }
 
-        public static void IsOverridable(MethodInfo method, Expression expression)
-        {
-            if (method.IsStatic)
-            {
-                throw new NotSupportedException(
-                    string.Format(
-                        CultureInfo.CurrentCulture,
-                        Resources.UnsupportedExpressionWithHint,
-                        expression.ToStringFixed(),
-                        string.Format(
-                            CultureInfo.CurrentCulture,
-                            method.IsExtensionMethod() ? Resources.UnsupportedExtensionMethod : Resources.UnsupportedStaticMember,
-                            $"{method.DeclaringType.GetFormattedName()}.{method.Name}")));
-            }
-            else if (!method.CanOverride())
-            {
-                throw new NotSupportedException(
-                    string.Format(
-                        CultureInfo.CurrentCulture,
-                        Resources.UnsupportedExpressionWithHint,
-                        expression.ToStringFixed(),
-                        string.Format(
-                            CultureInfo.CurrentCulture,
-                            Resources.UnsupportedNonOverridableMember,
-                            $"{method.DeclaringType.GetFormattedName()}.{method.Name}")));
-            }
-        }
-
-        public static void IsVisibleToProxyFactory(MethodInfo method)
-        {
-            if (ProxyFactory.Instance.IsMethodVisible(method, out string messageIfNotVisible) == false)
-            {
-                throw new ArgumentException(string.Format(
-                    CultureInfo.CurrentCulture,
-                    Resources.MethodNotVisibleToProxyFactory,
-                    method.DeclaringType.Name,
-                    method.Name,
-                    messageIfNotVisible));
-            }
-        }
-
         public static void IsEventAdd(LambdaExpression expression, string paramName)
         {
             Debug.Assert(expression != null);

@@ -6,12 +6,9 @@ using System.Threading.Tasks;
 
 namespace Mocker.API
 {
-    public class MockProxy
+    public class MockProxy(Func<Delegate, object[], object> relay)
     {
-        public void Relay(Delegate proxied, object[] args)
-        {
-            Console.WriteLine($"{proxied.Method.Name} {args.Length}");
-        }
+        public object Relay(Delegate proxied, object[] args) => relay(proxied, args);
     }
 }
 

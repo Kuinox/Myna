@@ -6,4 +6,16 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+      <ProjectReference Include="../Mocker.Weaver/Mocker.Weaver.csproj"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Build\WeaveDependency.targets">
+      <PackagePath>buildTransitive\</PackagePath>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Pack>true</Pack>
+    </None>
+  </ItemGroup>
+
 </Project>

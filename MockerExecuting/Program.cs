@@ -8,5 +8,4 @@ notMocked.MethodToMock();
 var mocked = new ClassToMock();
 var type = typeof(ClassToMock);
 var field = type.GetField("mockProxy")!;
-field.SetValue(mocked, new MockProxy());
 mocked.MethodToMock();

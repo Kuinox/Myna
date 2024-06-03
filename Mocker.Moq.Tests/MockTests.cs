@@ -7,15 +7,17 @@ namespace Mocker.Moq.Tests
         [Test]
         public void can_mock_non_virtual_method()
         {
-            var myClass = new MyClass();
-            var mocker = new Mock<MyClass>(myClass);
-            mocker.Setup(x => x.IsMocked).Returns(true);
-            Assert.IsTrue(myClass.IsMocked);
+            var mock1 = new Mock<Type>();
+            var mock = new Mock<MyClass>();
+            mock.Setup(x => x.IsMocked()).Returns(true);
+            Assert.IsTrue(mock.Object.IsMocked());
         }
+
+        class SubClass { }
     }
 
 
     class MyClass{
-        public bool IsMocked => false;
+        public bool IsMocked() => false;
     }
 }

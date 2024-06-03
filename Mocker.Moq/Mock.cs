@@ -633,9 +633,6 @@ namespace Moq
 
                 // For all other cases, we create a regular setup.
 
-                Guard.IsOverridable(part.Method, part.Expression);
-                Guard.IsVisibleToProxyFactory(part.Method);
-
                 var setup = new MethodCall(originalExpression, targetMock, condition: null, expectation: part);
                 setup.SetReturnValueBehavior(value);
                 targetMock.MutableSetups.Add(setup);

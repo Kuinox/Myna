@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Mocker.Moq.Properties {
+namespace Moq.Properties {
     using System;
     
     
