@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq.Expressions;
 using Mono.Cecil;
@@ -12,41 +13,47 @@ namespace Mocker
     {
         static void Main(string[] args)
         {
+            Debugger.Launch();
             var guid = Guid.NewGuid().ToString();
             var libPath = @"C:\dev\Mocker\Mocker.API\bin\Debug\net8.0\Mocker.API.dll";
             var moqPath = @"C:\dev\Mocker\Mocker.Moq\bin\Debug\net8.0\Mocker.Moq.dll";
             var dllPath = @"C:\dev\Mocker\Mocker.Moq.Tests\bin\Debug\net8.0\Mocker.Moq.Tests.dll";
             var tempDllPath = dllPath + guid;
-
-            using (var moqPEStream = File.Open(moqPath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (var moqModule = ModuleDefinition.ReadModule(moqPEStream))
-            using (var libPEStream = File.Open(libPath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (var libModule = ModuleDefinition.ReadModule(libPEStream))
-            using (var peStream = File.Open(dllPath, FileMode.Open, FileAccess.ReadWrite))
-            using (var module = ModuleDefinition.ReadModule(peStream))
+            if (RunWeave(libPath, moqPath, dllPath, tempDllPath))
             {
-                if (!ShouldWeave(module)) return;
+                File.Move(tempDllPath, dllPath, true);
+            }
+        }
 
-                var moqType = moqModule.GetType("Moq.Mock`1");
-                var mockProxyType = libModule.GetType("Mocker.API.MockProxy");
-                var objectCtor = module.ImportReference(module.TypeSystem.Object.Resolve().Methods.Single(x => x.Name == ".ctor"));
-                var typesToMock = GetMockedTypes(module, [moqType.FullName]).ToArray();
+        private static bool RunWeave(string libPath, string moqPath, string dllPath, string tempDllPath)
+        {
+            var dllFolder = Path.GetDirectoryName(tempDllPath)!;
+            Environment.CurrentDirectory = dllFolder;
+            using var moqPEStream = File.Open(moqPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var moqModule = ModuleDefinition.ReadModule(moqPEStream);
+            using var libPEStream = File.Open(libPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var libModule = ModuleDefinition.ReadModule(libPEStream);
+            using var peStream = File.Open(dllPath, FileMode.Open, FileAccess.ReadWrite);
+            using var module = ModuleDefinition.ReadModule(peStream);
+            if (IsAlreadyWeaved(module)) return false;
+
+            var moqType = moqModule.GetType("Moq.Mock`1");
+            var mockProxyType = libModule.GetType("Mocker.API.MockProxy");
+            var objectCtor = module.ImportReference(module.TypeSystem.Object.Resolve().Methods.Single(x => x.Name == ".ctor"));
+            var typesToMock = GetMockedTypes(module, [moqType.FullName]).ToArray();
 
 
-                var proxyMethod = mockProxyType.Methods.Single(x => x.Name == "Relay");
-                var importedProxyType = module.ImportReference(mockProxyType);
+            var proxyMethod = mockProxyType.Methods.Single(x => x.Name == "Relay");
+            var importedProxyType = module.ImportReference(mockProxyType);
 
-                foreach (var type in typesToMock)
-                {
-                    var theType = type.Resolve();
-                    WeaveType(theType.Module,theType , proxyMethod, importedProxyType, objectCtor);
-                }
-
-
-                module.Write(tempDllPath);
+            foreach (var type in typesToMock)
+            {
+                var theType = type.Resolve();
+                WeaveType(theType.Module, theType, proxyMethod, importedProxyType, objectCtor);
             }
 
-            File.Move(tempDllPath, dllPath, true);
+            module.Write(tempDllPath);
+            return true;
         }
 
         static void WeaveType(ModuleDefinition module, TypeDefinition type, MethodDefinition proxyMethod, TypeReference importedProxyType, MethodReference objCtor)
@@ -68,13 +75,14 @@ namespace Mocker
 
             // Capture all original methods names
             var redirectedMethods = type.Methods
-                .Where(predicate => !predicate.IsConstructor && !predicate.IsStatic)
+                .Where(predicate => !predicate.IsConstructor && !predicate.IsStatic && !predicate.IsAbstract)
                 .ToArray();
             var originals = new Dictionary<string, MethodDefinition>();
             // clone methods into Method_Original
 
             foreach (var method in redirectedMethods)
             {
+                if (method.IsAbstract || method.IsStatic) continue;
                 var newMethod = new MethodDefinition(method.Name + "_Original", method.Attributes, method.ReturnType);
                 originals.Add(method.FullName, newMethod);
                 type.Methods.Add(newMethod);
@@ -200,23 +208,35 @@ namespace Mocker
             }
         }
 
-        static bool ShouldWeave(ModuleDefinition module)
+        static bool IsAlreadyWeaved(ModuleDefinition module)
         {
             // Check if MockerWeavingSentinelAttribute is present on the assembly
-            var sentinelAttribute = module.CustomAttributes
-                .FirstOrDefault(attr => attr.AttributeType.FullName == typeof(Mocker.API.MockerWeavingSentinelAttribute).FullName);
+            var sentinelAttribute = module.Assembly.CustomAttributes
+                .FirstOrDefault(attr => attr.AttributeType.FullName == "Mocker.API.MockerWeavingSentinelAttribute");
 
             if (sentinelAttribute != null)
             {
                 Console.WriteLine("MockerWeavingSentinelAttribute found on the assembly. Exiting.");
-                return false;
+                return true;
             }
 
             // Add MockerWeavingSentinelAttribute to the assembly
-            var attributeConstructor = module.ImportReference(typeof(Mocker.API.MockerWeavingSentinelAttribute).GetConstructor(Type.EmptyTypes));
-            var customAttribute = new CustomAttribute(attributeConstructor);
+            var attributeTypeName = "Mocker.API.MockerWeavingSentinelAttribute";
+            var assemblyName = "Mocker.API";
+
+            // gets Mocker.Moq module first
+            var mocker = module.AssemblyResolver.Resolve(module.AssemblyReferences.Single(x => x.Name == "Mocker.Moq"));
+
+            var assemblyReference = mocker.Modules.SelectMany(x => x.AssemblyReferences).First(ar => ar.Name == assemblyName);
+            var assemblyDefinition = module.AssemblyResolver.Resolve(assemblyReference);
+            var attributeTypeReference = assemblyDefinition.MainModule.Types.First(t => t.FullName == attributeTypeName);
+
+            var attributeConstructor = attributeTypeReference.Methods.FirstOrDefault(m => m.IsConstructor && !m.HasParameters)
+                ?? throw new InvalidOperationException($"Parameterless constructor for type '{attributeTypeName}' not found.");
+            var attributeConstructorReference = module.ImportReference(attributeConstructor);
+            var customAttribute = new CustomAttribute(attributeConstructorReference);
             module.Assembly.CustomAttributes.Add(customAttribute);
-            return true;
+            return false;
         }
     }
 }

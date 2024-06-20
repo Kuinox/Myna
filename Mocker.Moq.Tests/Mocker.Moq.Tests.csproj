@@ -9,7 +9,7 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
-	<Import Project="..\Mocker.Weaver\Build\WeaveDependency.targets"/>
+	<Import Project="..\Mocker.API\Build\WeaveDependency.targets"/>
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
