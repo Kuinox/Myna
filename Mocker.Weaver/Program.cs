@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq.Expressions;
+using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -13,44 +14,54 @@ namespace Mocker
     {
         static void Main(string[] args)
         {
+            var targetDll = args[0];
+            var paths = new HashSet<string>(args.Skip(1).Select(x => Path.GetFullPath(x)));
+            var folder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+            var libPath = Path.Combine(folder, "Mocker.API.dll");
+            var moqPath = Path.Combine(folder, "Mocker.Moq.dll");
+            paths.Add(Path.GetFullPath(targetDll));
             Debugger.Launch();
-            var guid = Guid.NewGuid().ToString();
-            var libPath = @"C:\dev\Mocker\Mocker.API\bin\Debug\net8.0\Mocker.API.dll";
-            var moqPath = @"C:\dev\Mocker\Mocker.Moq\bin\Debug\net8.0\Mocker.Moq.dll";
-            var dllPath = @"C:\dev\Mocker\Mocker.Moq.Tests\bin\Debug\net8.0\Mocker.Moq.Tests.dll";
-            var tempDllPath = dllPath + guid;
-            if (RunWeave(libPath, moqPath, dllPath, tempDllPath))
+            var tempDllPath = targetDll + Guid.NewGuid().ToString();
+            if (RunWeave(libPath, targetDll, tempDllPath, paths))
             {
-                File.Move(tempDllPath, dllPath, true);
+                File.Move(tempDllPath, targetDll, true);
             }
         }
 
-        private static bool RunWeave(string libPath, string moqPath, string dllPath, string tempDllPath)
+        private static bool RunWeave(string libPath, string dllPath, string tempDllPath, HashSet<string> paths)
         {
             var dllFolder = Path.GetDirectoryName(tempDllPath)!;
             Environment.CurrentDirectory = dllFolder;
-            using var moqPEStream = File.Open(moqPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using var moqModule = ModuleDefinition.ReadModule(moqPEStream);
             using var libPEStream = File.Open(libPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             using var libModule = ModuleDefinition.ReadModule(libPEStream);
             using var peStream = File.Open(dllPath, FileMode.Open, FileAccess.ReadWrite);
             using var module = ModuleDefinition.ReadModule(peStream);
             if (IsAlreadyWeaved(module)) return false;
 
-            var moqType = moqModule.GetType("Moq.Mock`1");
             var mockProxyType = libModule.GetType("Mocker.API.MockProxy");
             var objectCtor = module.ImportReference(module.TypeSystem.Object.Resolve().Methods.Single(x => x.Name == ".ctor"));
-            var typesToMock = GetMockedTypes(module, [moqType.FullName]).ToArray();
+            var typesToMock = GetMockedTypes(module, ["Moq.Mock`1"]).ToArray();
 
 
             var proxyMethod = mockProxyType.Methods.Single(x => x.Name == "Relay");
             var importedProxyType = module.ImportReference(mockProxyType);
 
+            var error = false;
             foreach (var type in typesToMock)
             {
                 var theType = type.Resolve();
+                var typeModulePath = Path.GetFullPath(theType.Module.FileName);
+                //is type dll present in paths ?
+                if (!paths.Contains(typeModulePath))
+                {
+                    Console.WriteLine($"error Mocker.Weaver: Cannot Mock '{theType.FullName}' in dll {typeModulePath} because this shared dll.");
+                    error = true;
+                    continue;
+                }
                 WeaveType(theType.Module, theType, proxyMethod, importedProxyType, objectCtor);
             }
+
+            if (error) Environment.Exit(1);
 
             module.Write(tempDllPath);
             return true;
@@ -58,12 +69,12 @@ namespace Mocker
 
         static void WeaveType(ModuleDefinition module, TypeDefinition type, MethodDefinition proxyMethod, TypeReference importedProxyType, MethodReference objCtor)
         {
-            var proxyField = new FieldDefinition("mockProxy", FieldAttributes.Public, importedProxyType);
+            var proxyField = new FieldDefinition("mockProxy", Mono.Cecil.FieldAttributes.Public, importedProxyType);
             type.Fields.Add(proxyField);
 
-            var proxyConstructor = new MethodDefinition(".ctor", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, module.TypeSystem.Void);
+            var proxyConstructor = new MethodDefinition(".ctor", Mono.Cecil.MethodAttributes.Public | Mono.Cecil.MethodAttributes.HideBySig | Mono.Cecil.MethodAttributes.SpecialName | Mono.Cecil.MethodAttributes.RTSpecialName, module.TypeSystem.Void);
             type.Methods.Add(proxyConstructor);
-            var parameter = new ParameterDefinition("relay", ParameterAttributes.None, importedProxyType);
+            var parameter = new ParameterDefinition("relay", Mono.Cecil.ParameterAttributes.None, importedProxyType);
             proxyConstructor.Parameters.Add(parameter);
             var ctorIl = proxyConstructor.Body.GetILProcessor();
             ctorIl.Emit(OpCodes.Ldarg_0);

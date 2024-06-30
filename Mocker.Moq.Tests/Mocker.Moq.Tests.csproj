@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -9,7 +9,7 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
-	<Import Project="..\Mocker.API\Build\WeaveDependency.targets"/>
+	<Import Project="..\Mocker.API\Build\WeaveDependency.targets" />
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
@@ -20,11 +20,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Mocked\Mocked.csproj" />
     <ProjectReference Include="..\Mocker.Moq\Mocker.Moq.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="NUnit.Framework" />
   </ItemGroup>
-
 </Project>

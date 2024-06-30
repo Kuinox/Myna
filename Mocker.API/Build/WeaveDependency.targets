@@ -1,5 +1,10 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Target Name="MyCustomPostBuildTarget" AfterTargets="AfterBuild">
-	  <Exec Command="dotnet &quot;$(OutputPath)Mocker.Weaver.dll&quot; %(ReferenceCopyLocalPaths.FullPath)" />
-  </Target>
+	<Target Name="ConcatenateReferencesAndRunWeaver" AfterTargets="AfterBuild">
+		<PropertyGroup>
+			<!-- Concatenate all reference paths with a space -->
+			<ConcatenatedReferences>@(ReferenceCopyLocalPaths->'$(MSBuildProjectDirectory)\$(OutDir)%(DestinationSubDirectory)%(Filename)%(Extension)', ' ')</ConcatenatedReferences>
+		</PropertyGroup>
+		<Exec Command='dotnet "$(OutputPath)Mocker.Weaver.dll" $(TargetPath) $(ConcatenatedReferences)' />
+	</Target>
+
 </Project>
