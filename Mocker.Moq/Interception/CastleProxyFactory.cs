@@ -107,6 +107,7 @@ namespace Moq
 
             try
             {
+                //if(!mockType.Assembly.CustomAttributes.Any(x=>x.))
                 var theInterceptor = new Interceptor(interceptor);
                 var proxy = new MockProxy((method, args) =>
                 {

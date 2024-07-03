@@ -7,5 +7,7 @@
             return false;
         }
 
+        public bool PropertyToMock => false;
+
     }
 }

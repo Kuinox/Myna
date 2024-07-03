@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Security.AccessControl;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -12,7 +13,7 @@ namespace Mocker
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             var targetDll = args[0];
             var paths = new HashSet<string>(args.Skip(1).Select(x => Path.GetFullPath(x)));
@@ -21,35 +22,36 @@ namespace Mocker
             var moqPath = Path.Combine(folder, "Mocker.Moq.dll");
             paths.Add(Path.GetFullPath(targetDll));
             Debugger.Launch();
-            var tempDllPath = targetDll + Guid.NewGuid().ToString();
-            if (RunWeave(libPath, targetDll, tempDllPath, paths))
+            var toWeave = RunWeave(libPath, targetDll, paths);
+            if (toWeave is null) return 1;
+            foreach(var (origin, dest) in toWeave)
             {
-                File.Move(tempDllPath, targetDll, true);
+                File.Move(origin, dest, true);
             }
+            return 0;
         }
 
-        private static bool RunWeave(string libPath, string dllPath, string tempDllPath, HashSet<string> paths)
+        private static Dictionary<string, string>? RunWeave(string libPath, string dllPath, HashSet<string> paths)
         {
-            var dllFolder = Path.GetDirectoryName(tempDllPath)!;
-            Environment.CurrentDirectory = dllFolder;
+            Environment.CurrentDirectory = Path.GetDirectoryName(dllPath)!;
             using var libPEStream = File.Open(libPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             using var libModule = ModuleDefinition.ReadModule(libPEStream);
             using var peStream = File.Open(dllPath, FileMode.Open, FileAccess.ReadWrite);
             using var module = ModuleDefinition.ReadModule(peStream);
-            if (IsAlreadyWeaved(module)) return false;
+            if (IsAlreadyWeaved(module)) return null;
 
             var mockProxyType = libModule.GetType("Mocker.API.MockProxy");
-            var objectCtor = module.ImportReference(module.TypeSystem.Object.Resolve().Methods.Single(x => x.Name == ".ctor"));
             var typesToMock = GetMockedTypes(module, ["Moq.Mock`1"]).ToArray();
 
 
             var proxyMethod = mockProxyType.Methods.Single(x => x.Name == "Relay");
-            var importedProxyType = module.ImportReference(mockProxyType);
-
+            var modulesToWeave = new HashSet<ModuleDefinition>();
             var error = false;
-            foreach (var type in typesToMock)
+            foreach (var type in typesToMock.Distinct())
             {
                 var theType = type.Resolve();
+                modulesToWeave.Add(theType.Module);
+
                 var typeModulePath = Path.GetFullPath(theType.Module.FileName);
                 //is type dll present in paths ?
                 if (!paths.Contains(typeModulePath))
@@ -58,17 +60,27 @@ namespace Mocker
                     error = true;
                     continue;
                 }
-                WeaveType(theType.Module, theType, proxyMethod, importedProxyType, objectCtor);
+                WeaveType(theType.Module, mockProxyType, theType, proxyMethod);
             }
 
-            if (error) Environment.Exit(1);
+            if (error) return null;
+            var guid = Guid.NewGuid();
+            var weavedPaths = new Dictionary<string, string>();
+            foreach (var moduleToWeave in modulesToWeave)
+            {
+                var newPath = moduleToWeave.FileName + guid;
+                moduleToWeave.Write(newPath);
+                weavedPaths[newPath] = moduleToWeave.FileName;
+            }
 
-            module.Write(tempDllPath);
-            return true;
+            return weavedPaths;
         }
 
-        static void WeaveType(ModuleDefinition module, TypeDefinition type, MethodDefinition proxyMethod, TypeReference importedProxyType, MethodReference objCtor)
+        static void WeaveType(ModuleDefinition module, TypeDefinition mockProxyType, TypeDefinition type, MethodDefinition proxyMethod)
         {
+            var objCtor = module.ImportReference(module.TypeSystem.Object.Resolve().Methods.Single(x => x.Name == ".ctor"));
+            var importedProxyType = module.ImportReference(mockProxyType);
+
             var proxyField = new FieldDefinition("mockProxy", Mono.Cecil.FieldAttributes.Public, importedProxyType);
             type.Fields.Add(proxyField);
 
