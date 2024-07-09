@@ -19,37 +19,33 @@ namespace Mocker
             var paths = new HashSet<string>(args.Skip(1).Select(x => Path.GetFullPath(x)));
             var folder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
             var libPath = Path.Combine(folder, "Mocker.API.dll");
-            var moqPath = Path.Combine(folder, "Mocker.Moq.dll");
+            var moqLibPath = Path.Combine(folder, "Mocker.Moq.dll");
             paths.Add(Path.GetFullPath(targetDll));
             Debugger.Launch();
-            var toWeave = RunWeave(libPath, targetDll, paths);
+            var toWeave = RunWeave(libPath, targetDll, moqLibPath, paths);
             if (toWeave is null) return 1;
-            foreach(var (origin, dest) in toWeave)
+            foreach (var (origin, dest) in toWeave)
             {
                 File.Move(origin, dest, true);
             }
             return 0;
         }
 
-        private static Dictionary<string, string>? RunWeave(string libPath, string dllPath, HashSet<string> paths)
+        private static Dictionary<string, string>? RunWeave(string libPath, string dllPath, string moqLibPath, HashSet<string> paths)
         {
             Environment.CurrentDirectory = Path.GetDirectoryName(dllPath)!;
-            using var libPEStream = File.Open(libPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using var libModule = ModuleDefinition.ReadModule(libPEStream);
-            using var peStream = File.Open(dllPath, FileMode.Open, FileAccess.ReadWrite);
-            using var module = ModuleDefinition.ReadModule(peStream);
-            if (IsAlreadyWeaved(module)) return null;
-
-            var mockProxyType = libModule.GetType("Mocker.API.MockProxy");
+            using var mockerApi = ModuleDefinition.ReadModule(libPath);
+            using var module = ModuleDefinition.ReadModule(dllPath);
+            using var moqModule = ModuleDefinition.ReadModule(moqLibPath);
             var typesToMock = GetMockedTypes(module, ["Moq.Mock`1"]).ToArray();
 
 
-            var proxyMethod = mockProxyType.Methods.Single(x => x.Name == "Relay");
             var modulesToWeave = new HashSet<ModuleDefinition>();
             var error = false;
             foreach (var type in typesToMock.Distinct())
             {
                 var theType = type.Resolve();
+                if (IsAlreadyWeaved(theType.Module, mockerApi)) continue;
                 modulesToWeave.Add(theType.Module);
 
                 var typeModulePath = Path.GetFullPath(theType.Module.FileName);
@@ -60,7 +56,7 @@ namespace Mocker
                     error = true;
                     continue;
                 }
-                WeaveType(theType.Module, mockProxyType, theType, proxyMethod);
+                WeaveType(mockerApi, theType.Module, theType);
             }
 
             if (error) return null;
@@ -76,8 +72,10 @@ namespace Mocker
             return weavedPaths;
         }
 
-        static void WeaveType(ModuleDefinition module, TypeDefinition mockProxyType, TypeDefinition type, MethodDefinition proxyMethod)
+        static void WeaveType(ModuleDefinition libModule, ModuleDefinition module, TypeDefinition type)
         {
+            var mockProxyType = libModule.GetType("Mocker.API.MockProxy");
+            var proxyMethod = mockProxyType.Methods.Single(x => x.Name == "Relay");
             var objCtor = module.ImportReference(module.TypeSystem.Object.Resolve().Methods.Single(x => x.Name == ".ctor"));
             var importedProxyType = module.ImportReference(mockProxyType);
 
@@ -231,7 +229,7 @@ namespace Mocker
             }
         }
 
-        static bool IsAlreadyWeaved(ModuleDefinition module)
+        static bool IsAlreadyWeaved(ModuleDefinition module, ModuleDefinition mockerApi)
         {
             // Check if MockerWeavingSentinelAttribute is present on the assembly
             var sentinelAttribute = module.Assembly.CustomAttributes
@@ -245,19 +243,14 @@ namespace Mocker
 
             // Add MockerWeavingSentinelAttribute to the assembly
             var attributeTypeName = "Mocker.API.MockerWeavingSentinelAttribute";
-            var assemblyName = "Mocker.API";
 
-            // gets Mocker.Moq module first
-            var mocker = module.AssemblyResolver.Resolve(module.AssemblyReferences.Single(x => x.Name == "Mocker.Moq"));
-
-            var assemblyReference = mocker.Modules.SelectMany(x => x.AssemblyReferences).First(ar => ar.Name == assemblyName);
-            var assemblyDefinition = module.AssemblyResolver.Resolve(assemblyReference);
-            var attributeTypeReference = assemblyDefinition.MainModule.Types.First(t => t.FullName == attributeTypeName);
-
-            var attributeConstructor = attributeTypeReference.Methods.FirstOrDefault(m => m.IsConstructor && !m.HasParameters)
+            var attributeType = mockerApi.Types.First(t => t.FullName == attributeTypeName);
+            var attributeTypeReference = module.ImportReference(attributeType);
+            var attributeConstructor = attributeType.Methods.FirstOrDefault(m => m.IsConstructor && !m.HasParameters)
                 ?? throw new InvalidOperationException($"Parameterless constructor for type '{attributeTypeName}' not found.");
             var attributeConstructorReference = module.ImportReference(attributeConstructor);
             var customAttribute = new CustomAttribute(attributeConstructorReference);
+           
             module.Assembly.CustomAttributes.Add(customAttribute);
             return false;
         }

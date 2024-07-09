@@ -107,7 +107,8 @@ namespace Moq
 
             try
             {
-                //if(!mockType.Assembly.CustomAttributes.Any(x=>x.))
+                if (!mockType.Assembly.CustomAttributes.Any(x => x.AttributeType.FullName == "Mocker.API.MockerWeavingSentinelAttribute"))
+                    throw new InvalidOperationException("Target type assembly did not get weaved for mocking classes.");
                 var theInterceptor = new Interceptor(interceptor);
                 var proxy = new MockProxy((method, args) =>
                 {
