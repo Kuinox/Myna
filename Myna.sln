@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34622.214
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Myna.Weaver", "Myna.Weaver\Myna.Weaver.csproj", "{FDC7355A-68C9-4A15-8D0A-6F883193D7CA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Myna.API", "Myna.API\Myna.API.csproj", "{BC78D3E0-1E47-4373-801D-6B7AF50ECC4F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Myna.Build", "Myna.Build\Myna.Build.csproj", "{A12D7EA6-FFF0-48C0-A255-79C9C99DCBB4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Myna.Task", "Myna.Task\Myna.Task.csproj", "{681AF193-13BA-41C5-987F-6E4F946F7529}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moq", "Myna.TheFatChicken\src\Moq\Moq.csproj", "{2FD633C6-2C8C-4BCB-8B22-FFC5B73FA0D7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FDC7355A-68C9-4A15-8D0A-6F883193D7CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDC7355A-68C9-4A15-8D0A-6F883193D7CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDC7355A-68C9-4A15-8D0A-6F883193D7CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDC7355A-68C9-4A15-8D0A-6F883193D7CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC78D3E0-1E47-4373-801D-6B7AF50ECC4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC78D3E0-1E47-4373-801D-6B7AF50ECC4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC78D3E0-1E47-4373-801D-6B7AF50ECC4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC78D3E0-1E47-4373-801D-6B7AF50ECC4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A12D7EA6-FFF0-48C0-A255-79C9C99DCBB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A12D7EA6-FFF0-48C0-A255-79C9C99DCBB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A12D7EA6-FFF0-48C0-A255-79C9C99DCBB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A12D7EA6-FFF0-48C0-A255-79C9C99DCBB4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{681AF193-13BA-41C5-987F-6E4F946F7529}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{681AF193-13BA-41C5-987F-6E4F946F7529}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{681AF193-13BA-41C5-987F-6E4F946F7529}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{681AF193-13BA-41C5-987F-6E4F946F7529}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FD633C6-2C8C-4BCB-8B22-FFC5B73FA0D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FD633C6-2C8C-4BCB-8B22-FFC5B73FA0D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FD633C6-2C8C-4BCB-8B22-FFC5B73FA0D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FD633C6-2C8C-4BCB-8B22-FFC5B73FA0D7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3F603733-ED12-41BC-AD08-0E2111EFA629}
+	EndGlobalSection
+EndGlobal

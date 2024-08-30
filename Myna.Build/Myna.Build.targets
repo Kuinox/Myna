@@ -1,0 +1,16 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<UsingTask TaskName="Myna.Task.MynaWeaver" AssemblyFile="$(MSBuildThisFileDirectory)../tasks/Myna.Task.dll" />
+	<Target Name="ConcatenateReferencesAndRunWeaver" AfterTargets="Build">
+		<PropertyGroup>
+			<!-- Concatenate all reference paths with a space -->
+			<ConcatenatedReferences>@(ReferenceCopyLocalPaths->'$(MSBuildProjectDirectory)\$(OutDir)%(DestinationSubDirectory)%(Filename)%(Extension)', ' ')</ConcatenatedReferences>
+		</PropertyGroup>
+		<MynaWeaver EntryPointFile="$(TargetPath)"
+					  CopiedDllAllowList="$(ConcatenatedReferences)"
+					  MynaAPIPath="$(MSBuildProjectDirectory)\$(OutDir)Myna.API.dll"
+					  MynaWeaverPath="$(MSBuildThisFileDirectory)../tools/Myna.Weaver.dll"
+					  ToolPath="$(DotNetHostDirectory)"
+					  ToolExe="$(DotNetHostFileName)"
+				/>
+	</Target>
+</Project>

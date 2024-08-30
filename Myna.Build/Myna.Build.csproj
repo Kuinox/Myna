@@ -1,0 +1,66 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<DevelopmentDependency>true</DevelopmentDependency>
+		<SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+		<NoWarn>$(NoWarn);NU5100</NoWarn>
+		<DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Myna.Task\Myna.Task.csproj" DestinationSubDirectory="tasks\" />
+		<ProjectReference
+			Include="..\Myna.Weaver\Myna.Weaver.csproj"
+			ReferenceOutputAssembly="false"
+			SkipGetTargetFrameworkProperties="true"
+		/>
+	</ItemGroup>
+	
+	<ItemGroup>
+		<None Include="$(MSBuildThisFileDirectory)..\Myna.Weaver\bin\$(Configuration)\net8.0\*.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Pack>true</Pack>
+			<PackagePath>tools</PackagePath>
+			<Visible>false</Visible>
+		</None>
+		<None Remove="bin\Debug\netstandard2.0\Myna.Build.dll" />
+		<None Include="$(OutputPath)\Myna.Build.dll">
+			<Pack>true</Pack>
+			<PackagePath>tools</PackagePath>
+			<Visible>false</Visible>
+		</None>
+		<None Include="$(MSBuildThisFileDirectory)..\Myna.Weaver\bin\$(Configuration)\net8.0\Myna.Weaver.runtimeconfig.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Pack>true</Pack>
+			<PackagePath>tools</PackagePath>
+			<Visible>false</Visible>
+		</None>
+	</ItemGroup>
+
+	<Target Name="GetFilesToPackage" AfterTargets="Build">
+		<ItemGroup>
+			<_File Include="$(OutDir)\**\*.*" PackagePath="tools" Exclude="$(OutDir)\tasks\*.*" />
+			<_File Include="$(OutDir)\tasks\*.*" PackagePath="tasks" />
+
+			<_File Include="build\**\*.*" PackagePath="build" />
+			<_File Include="buildMultiTargeting\**\*.*" PackagePath="buildMultiTargeting" />
+
+			<None Include="@(_File)" Pack="True" PackagePath="%(_File.PackagePath)" />
+		</ItemGroup>
+	</Target>
+
+	<ItemGroup>
+		<None Update="Myna.Build.targets">
+			<PackagePath>buildTransitive</PackagePath>
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<Pack>true</Pack>
+		</None>
+	</ItemGroup>
+
+	<!-- And don't try to copy them to the build output either. -->
+	<PropertyGroup>
+		<GenerateDependencyFile>false</GenerateDependencyFile>
+		<GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
+	</PropertyGroup>
+</Project>
