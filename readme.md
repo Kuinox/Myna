@@ -12,6 +12,8 @@ The Myna bird is known for its ability to mimic a wide range of sounds.
 
 ![NuGet Version](https://img.shields.io/nuget/v/Myna.TheFatChicken)
 
+In order to use it, you can replace your Moq®️ package reference with:
+
 ```xml
 <PackageReference Include="Myna.TheFatChicken" Version="0.1.0" />
 ```
@@ -27,7 +29,7 @@ Myna was designed to support other Mocking libraries, right now, only Moq®️ i
 |----------------------|-----------------------------------------------------------------------------------------------|
 | **Myna.API**         | Contains the class proxy that gets injected into your classes.      |
 | **Myna.Build**       | An MSBuild task that runs the weaver on the assemblies.  |
-| **Myna.TheFatChicken** | A Moq®️ fork that uses the class proxy from Myna.API. |
+| **Myna.TheFatChicken** | A Moq®️ fork that uses the class proxy from Myna.API. It also depends on the previous packages. |
 
 ## Documentation
 
