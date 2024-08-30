@@ -4,5 +4,25 @@
 		<TargetFramework>netstandard2.0</TargetFramework>
 	</PropertyGroup>
 
+	<PropertyGroup>
+		<Authors>Kuinox</Authors>
+		<Copyright>Copyright (c) 2024, Kuinox and contributors. All rights reserved.</Copyright>
+		<PackageIcon>icon.png</PackageIcon>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+		<NoPackageAnalysis>True</NoPackageAnalysis>
+		<PackageTags>myna;tdd;mocking;mocks;unittesting;unittest</PackageTags>
+		<PackageProjectUrl>https://github.com/Kuinox/Myna</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/Kuinox/Myna</RepositoryUrl>
+	</PropertyGroup>
+
+	
+	<ItemGroup>
+		<None Include="..\assets\icon.png">
+			<Pack>true</Pack>
+			<PackagePath>contentFiles\any\any\icon.png</PackagePath>
+		</None>
+	</ItemGroup>
+
 
 </Project>
