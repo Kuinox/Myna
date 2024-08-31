@@ -2,7 +2,7 @@
 	Myna
 </h1>
 <p align="center">
-Myna: A drop-in alternative to Moq®️, capable of mocking interfaces and <i>any</i> classes.
+Myna: A drop-in alternative to Moq®️, capable of mocking interfaces and any class <i>without</i> an interface.
 </p>
 
 <div align="center">
@@ -50,15 +50,15 @@ class Foo : IFoo
    public bool Mocked => false;
 }
 ```
-You don't need to pollute your codebase anymore with useless interfaces !
+You don't need to pollute your codebase anymore with useless interfaces!
 
 ## How does it work ?
 
-In order to be able to Mock any class, Myna transparently weave the DLLs after your project has compiled.
+In order to be able to Mock any class, Myna transparently weaves the DLLs after your project has compiled.
 It means it can only mock classes of DLLs that are copied to the output directory, so for example, you cannot mock .NET librairies, thankfully.
 
 ## NuGet Packages
-Myna was designed to support other Mocking libraries, right now, only Moq®️ is implemented.
+Myna was designed to support other Mocking libraries, but as of right now, only Moq®️ is implemented.
 
 
 | Package Name         | Description                                                                                   |
