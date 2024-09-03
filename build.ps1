@@ -1,4 +1,5 @@
-$currentConfig = 'Debug'
+$currentConfig = 'Release'
+$packageVersion = '0.1.0'
 
 Remove-Item -Path "artifacts\*" -Recurse
 dotnet nuget locals all --clear
@@ -28,9 +29,8 @@ Push-Location Myna.TheFatChicken/src
 Remove-BinObjFirstLevel
 Pop-Location
 
-
 dotnet build Myna.Weaver/Myna.Weaver.csproj -c $currentConfig
 
-dotnet pack Myna.Build/Myna.Build.csproj -c $currentConfig -o artifacts
-dotnet pack Myna.API/Myna.API.csproj -c $currentConfig -o artifacts
-dotnet pack Myna.TheFatChicken/src/Moq/Moq.csproj -c $currentConfig -o artifacts
+dotnet pack Myna.Build/Myna.Build.csproj -c $currentConfig -p:PackageVersion=$packageVersion -o artifacts
+dotnet pack Myna.API/Myna.API.csproj -c $currentConfig -p:PackageVersion=$packageVersion -o artifacts
+dotnet pack Myna.TheFatChicken/src/Moq/Moq.csproj -c $currentConfig -p:PackageVersion=$packageVersion -o artifacts

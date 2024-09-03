@@ -18,10 +18,7 @@
 
 	
 	<ItemGroup>
-		<None Include="..\assets\icon.png">
-			<Pack>true</Pack>
-			<PackagePath>contentFiles\any\any\icon.png</PackagePath>
-		</None>
+		<None Include="..\assets\icon.png" Pack="true" PackagePath="." />
 	</ItemGroup>
 
 
