@@ -45,7 +45,7 @@ var mock = new Mock<Foo>();
 mock.Setup(x => x.Mocked).Returns(true);
 Assert.IsTrue(mock.Object.Mocked);
 
-class Foo : IFoo
+class Foo
 {
    public bool Mocked => false;
 }
