@@ -137,6 +137,12 @@ namespace Myna
                 il.Emit(OpCodes.Ldfld, proxyField);
                 il.Emit(OpCodes.Brtrue_S, elseStart); //0x0f
                 il.Emit(OpCodes.Ldarg_0);
+
+                for (var i = 0; i < method.Parameters.Count; i++)
+                {
+                    il.Emit(OpCodes.Ldarg, i + 1);
+                }
+
                 il.Emit(OpCodes.Call, originals[method.FullName]);
                 il.Emit(OpCodes.Ret);
                 il.Append(elseStart);

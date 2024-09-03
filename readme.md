@@ -17,7 +17,7 @@ $\textcolor{gray}{\textsf{The Myna bird is known for its ability to mimic a wide
 In order to use it, you can replace your Moq®️ package reference with:
 
 ```xml
-<PackageReference Include="Myna.TheFatChicken" Version="0.1.0" />
+<PackageReference Include="Myna.TheFatChicken" Version="0.1.1" />
 ```
 
 Without Myna, using only Moq®️:
